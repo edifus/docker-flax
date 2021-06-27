@@ -35,7 +35,9 @@ RUN apt-get update \
     && cd /app/flax-blockchain \
     && /bin/sh ./install.sh \
     && mkdir /plots \
-    && chown abc:abc -R /plots /config /app/flax-blockchain \
+    && chown abc:abc -R /plots \
+    && chown abc:abc -R /config \
+    && chown abc:abc -R /app/flax-blockchain \
     && echo "**** cleanup ****" \
     && apt-get clean \
     && rm -rf \
