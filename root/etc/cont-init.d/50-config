@@ -12,10 +12,12 @@ git -C /app/flax-blockchain fetch
 git -C /app/flax-blockchain checkout main
 
 # update flax-blockchain
-chown root:root -R /config /app/flax-blockchain
+chown root:root -R /config 
+chown root:root -R /app/flax-blockchain
 cd /app/flax-blockchain
 /bin/sh install.sh
-chown abc:abc -R /config /app/flax-blockchain
+chown abc:abc -R /config
+chown abc:abc -R /app/flax-blockchain
 
 # activate flax-blockchain venv
 . ./activate
@@ -101,5 +103,5 @@ fi
 deactivate
 
 # set proper user permissions
-chown abc:abc -R \
-  /config /app/flax-blockchain
+chown abc:abc -R /config
+chown abc:abc -R /app/flax-blockchain
