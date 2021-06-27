@@ -4,7 +4,7 @@ FROM ghcr.io/linuxserver/baseimage-ubuntu:focal
 LABEL maintainer="edifus"
 
 # environment variables
-ARG DEBIAN_FRONTEND="noninteractive"
+ENV DEBIAN_FRONTEND="noninteractive"
 ENV HOME="/config"
 
 # install flax-blockchain
@@ -27,11 +27,10 @@ RUN apt-get update \
       python3-dev \
       python3.8-venv \
       python3.8-distutils \
-      && echo "**** cloning latest flax-blockchain ****" \
-      && git clone https://github.com/Flax-Network/flax-blockchain.git \
-         --branch main \
-         --recurse-submodules="mozilla-ca" \
-         /app/flax-blockchain \
+    && echo "**** cloning latest flax-blockchain ****" \
+    && git clone https://github.com/felixbrucker/flax-blockchain.git --branch latest --recurse-submodules="mozilla-ca" /app/flax-blockchain \
+    && git -C /app/flax-blockchain fetch \
+    && git -C /app/flax-blockchain checkout main \
     && cd /app/flax-blockchain \
     && /bin/sh ./install.sh \
     && mkdir /plots \

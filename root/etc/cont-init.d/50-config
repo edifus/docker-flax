@@ -7,10 +7,13 @@ FULL_NODE=${FULL_NODE:-true}
 HARVESTER_ONLY=${HARVESTER_ONLY:-false}
 NODE_ONLY=${NODE_ONLY:-false}
 
+# checkout latest release version
+git -C /app/flax-blockchain fetch
+git -C /app/flax-blockchain checkout main
+
 # update flax-blockchain
 chown root:root -R /config /app/flax-blockchain
 cd /app/flax-blockchain
-git fetch
 /bin/sh install.sh
 chown abc:abc -R /config /app/flax-blockchain
 
@@ -43,7 +46,7 @@ then
     fi
     # configure remove farmer ip for harvester
     echo "**** setting farmer peer ip: ${FARMER_ADDRESS} ****"
-    s6-setuidgid abc /app/flax-blockchain/venv/bin/flax configure --set-farmer-peer ${FARMER_ADDRESS}:8447
+    s6-setuidgid abc /app/flax-blockchain/venv/bin/flax configure --set-farmer-peer ${FARMER_ADDRESS}:6885
   fi
 fi
 
