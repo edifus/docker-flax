@@ -9,7 +9,7 @@ NODE_ONLY=${NODE_ONLY:-false}
 # shutdown trap
 _term() {
   echo "Caught SIGTERM signal!"
-  exec s6-setuidgid abc /app/flax-blockchain/venv/bin/flax stop -d all 2>/dev/null
+  s6-setuidgid abc /app/flax-blockchain/venv/bin/flax stop -d all 2>/dev/null
 }
 trap _term SIGTERM
 
@@ -20,18 +20,18 @@ cd /app/flax-blockchain ; . ./activate
 if [[ ${FULL_NODE} == 'true' ]]
 then
   # start full-node
-  exec s6-setuidgid abc /app/flax-blockchain/venv/bin/flax start farmer
+  s6-setuidgid abc /app/flax-blockchain/venv/bin/flax start farmer
 elif [[ ${HARVESTER_ONLY} == 'true' || ${NODE_ONLY} == 'true' ]]
 then
   # start harvester
   if [[ ${HARVESTER_ONLY} == 'true' ]]
   then
-    exec s6-setuidgid abc /app/flax-blockchain/venv/bin/flax start harvester
+    s6-setuidgid abc /app/flax-blockchain/venv/bin/flax start harvester
   fi
   # start node-only
   if [[ ${NODE_ONLY} == 'true' ]]
   then
-    exec s6-setuidgid abc /app/flax-blockchain/venv/bin/flax start node
+    s6-setuidgid abc /app/flax-blockchain/venv/bin/flax start node
   fi
 fi
 
