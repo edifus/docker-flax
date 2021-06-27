@@ -11,7 +11,7 @@ on:
 
 env:
   ENDPOINT: "edifus/flax"
-  BRANCH: "latest"
+  BRANCH: "main"
   IMAGE: "latest"
 
 jobs:
