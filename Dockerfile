@@ -28,9 +28,10 @@ RUN apt-get update \
       python3.8-venv \
       python3.8-distutils \
     && echo "**** cloning latest flax-blockchain ****" \
-    && git clone https://github.com/felixbrucker/flax-blockchain.git --branch latest --recurse-submodules="mozilla-ca" /app/flax-blockchain \
-    && git -C /app/flax-blockchain fetch \
-    && git -C /app/flax-blockchain checkout main \
+    && git clone https://github.com/felixbrucker/flax-blockchain.git \
+       --branch main \
+       --recurse-submodules="mozilla-ca" \
+       /app/flax-blockchain \
     && cd /app/flax-blockchain \
     && /bin/sh ./install.sh \
     && mkdir /plots \
