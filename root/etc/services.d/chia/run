@@ -9,7 +9,7 @@ NODE_ONLY=${NODE_ONLY:-false}
 # shutdown trap
 _term() {
   echo "Caught SIGTERM signal!"
-  exec s6-setuidgid abc /app/flax-blockchain/venv/bin/flax stop -d all 2>/dev/null
+  s6-setuidgid abc /app/flax-blockchain/venv/bin/flax stop -d all 2>/dev/null
 }
 trap _term SIGTERM
 
