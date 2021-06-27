@@ -192,4 +192,4 @@ docker build  --no-cache --pull -t edifus/flax:test .
 
 ## Versions
 
-* **2021.05.16:** - Inital version, based on linuxserver.io ubuntu base and official flax-docker container
+* **2021.06.26:** - Inital version
