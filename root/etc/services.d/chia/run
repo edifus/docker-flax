@@ -1,0 +1,47 @@
+#!/usr/bin/with-contenv bash
+
+# environment variables
+TAIL_DEBUG_LOGS=${TAIL_DEBUG_LOGS:-false}
+FULL_NODE=${FULL_NODE:-true}
+HARVESTER_ONLY=${HARVESTER_ONLY:-false}
+NODE_ONLY=${NODE_ONLY:-false}
+
+# shutdown trap
+_term() {
+  echo "Caught SIGTERM signal!"
+  s6-setuidgid abc /app/flax-blockchain/venv/bin/flax stop -d all 2>/dev/null
+}
+trap _term SIGTERM
+
+# activate flax-blockchain venv
+cd /app/flax-blockchain ; . ./activate
+
+# run flax daemons
+if [[ ${FULL_NODE} == 'true' ]]
+then
+  # start full-node
+  s6-setuidgid abc /app/flax-blockchain/venv/bin/flax start farmer
+elif [[ ${HARVESTER_ONLY} == 'true' || ${NODE_ONLY} == 'true' ]]
+then
+  # start harvester
+  if [[ ${HARVESTER_ONLY} == 'true' ]]
+  then
+    s6-setuidgid abc /app/flax-blockchain/venv/bin/flax start harvester
+  fi
+  # start node-only
+  if [[ ${NODE_ONLY} == 'true' ]]
+  then
+    s6-setuidgid abc /app/flax-blockchain/venv/bin/flax start node
+  fi
+fi
+
+# run loop
+while true
+do
+  if [[ ${TAIL_DEBUG_LOGS} == 'true' ]]
+  then
+    tail -F /config/.flax/mainnet/log/debug.log
+  else
+    sleep 300
+  fi
+done

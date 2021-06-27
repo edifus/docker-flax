@@ -1,0 +1,48 @@
+name: Build Dev Image
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - develop
+  workflow_dispatch:
+
+env:
+  ENDPOINT: "edifus/flax"
+  BRANCH: "develop"
+  IMAGE: "develop"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2.3.3
+
+      - name: Build image
+        run: |
+          docker build --no-cache -t ${{ github.sha }} .
+      - name: Tag image
+        run: |
+          docker tag ${{ github.sha }} ${ENDPOINT}:${IMAGE}
+          docker tag ${{ github.sha }} ${ENDPOINT}:${{ github.sha }}
+          docker tag ${{ github.sha }} ghcr.io/${ENDPOINT}:${IMAGE}
+          docker tag ${{ github.sha }} ghcr.io/${ENDPOINT}:${{ github.sha }}
+      - name: Credential check
+        run: |
+          echo "CR_USER=${{ secrets.CR_USER }}" >> $GITHUB_ENV
+          echo "CR_PAT=${{ secrets.CR_PAT }}" >> $GITHUB_ENV
+          if [[ "${{ secrets.CR_USER }}" == "" && "${{ secrets.CR_PAT }}" == "" ]]; then
+            echo "::error::Push credential secrets missing."
+            echo "::error::You must set CR_USER & CR_PAT as secrets in your repo settings."
+            exit 1
+          fi
+      - name: Login to GitHub Container Registry
+        if: ${{ env.CR_USER && env.CR_PAT }}
+        run: |
+          echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u ${{ secrets.CR_USER }} --password-stdin
+      - name: Push tags to GitHub Container Registry
+        if: ${{ env.CR_USER && env.CR_PAT }}
+        run: |
+          docker push ghcr.io/${ENDPOINT}:${IMAGE}

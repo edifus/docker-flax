@@ -1,0 +1,102 @@
+#!/usr/bin/with-contenv bash
+
+# environment variables
+LOG_LEVEL=${LOG_LEVEL:-INFO}
+UPNP=${UPNP:-false}
+FULL_NODE=${FULL_NODE:-true}
+HARVESTER_ONLY=${HARVESTER_ONLY:-false}
+NODE_ONLY=${NODE_ONLY:-false}
+
+# update flax-blockchain
+chown root:root -R /config /app/flax-blockchain
+cd /app/flax-blockchain
+git fetch
+/bin/sh install.sh
+chown abc:abc -R /config /app/flax-blockchain
+
+# activate flax-blockchain venv
+. ./activate
+
+# init certs
+s6-setuidgid abc /app/flax-blockchain/venv/bin/flax init
+
+# configure harvester/farmer settings
+if [[ ${HARVESTER_ONLY} == 'true' ]]
+then
+  if [[ -z ${FARMER_ADDRESS+x} ]]
+  then
+    echo "ERROR: A farmer peer address is required if local farmer is not started"
+    exit
+  else
+    ## cacerts for remote harvester
+    if [[ -n ${CACERTS_DIR} ]]
+    then
+      if [[ ! -f /config/.init-ca-completed ]]
+      then
+        echo "**** cacerts provided - recreating certs ****"
+        s6-setuidgid abc /app/flax-blockchain/venv/bin/flax init -c ${CACERTS_DIR}
+        touch /config/.init-ca-completed
+      elif [[ -f /config/.init-ca-completed ]]
+      then
+        echo "**** cacerts provided but already initalized - skipping ****"
+      fi
+    fi
+    # configure remove farmer ip for harvester
+    echo "**** setting farmer peer ip: ${FARMER_ADDRESS} ****"
+    s6-setuidgid abc /app/flax-blockchain/venv/bin/flax configure --set-farmer-peer ${FARMER_ADDRESS}:8447
+  fi
+fi
+
+# configure plots directory
+if [[ ${HARVESTER_ONLY} == 'true' || ${FULL_NODE} == 'true' ]]
+then
+  if [[ -z ${PLOTS_DIR+x} || ! "$(ls -A ${PLOTS_DIR})" ]]
+  then
+    echo "WARNING: No plots found, a plot directory is required to properly farm"
+  elif [[ -n ${PLOTS_DIR} ]]
+  then
+    echo "**** setting plots directory: ${PLOTS_DIR} ****"
+    s6-setuidgid abc /app/flax-blockchain/venv/bin/flax plots add -d ${PLOTS_DIR}
+  fi
+fi
+
+# remove ipv6
+sed -i 's|localhost|127.0.0.1|g' /config/.flax/mainnet/config/config.yaml
+
+# configure flax daemon
+echo "**** setting log level: ${LOG_LEVEL} ****"
+s6-setuidgid abc /app/flax-blockchain/venv/bin/flax configure --set-log-level ${LOG_LEVEL}
+echo "**** setting upnp enabled: ${UPNP} "
+s6-setuidgid abc /app/flax-blockchain/venv/bin/flax configure --upnp ${UPNP}
+
+# generate/install keys
+if [[ ${KEYS} == "generate" || -n ${KEYS_FILE} || -f /config/flax-mnemonic.txt ]]
+then
+  if [[ -f /config/flax-mnemonic.txt ]]
+  then
+    KEYS_FILE="/config/flax-mnemonic.txt"
+    echo "**** Installing existing keys from file: \"${KEYS_FILE}\" ****"
+    s6-setuidgid abc /app/flax-blockchain/venv/bin/flax keys add -f ${KEYS_FILE}
+  elif [[ -n ${KEYS_FILE} ]]
+  then
+    echo "**** Installing existing keys from file: \"${KEYS_FILE}\" ****"
+    s6-setuidgid abc /app/flax-blockchain/venv/bin/flax keys add -f ${KEYS_FILE}
+    if [[ ! -f /config/flax-mnemonic.txt ]]
+    then
+      cat ${KEYS_FILE} | tee /config/flax-mnemonic.txt &>/dev/null
+    fi
+  elif [[ ${KEYS} == "generate" ]]
+  then
+    echo "**** Generating new keys ****"
+    s6-setuidgid abc /app/flax-blockchain/venv/bin/flax keys generate | sed -n '3p' | tee /config/flax-mnemonic.txt
+  fi
+else
+  echo "**** Not installing or generating keys ****"
+fi
+
+# deactivate flax-blockchain venv
+deactivate
+
+# set proper user permissions
+chown abc:abc -R \
+  /config /app/flax-blockchain
