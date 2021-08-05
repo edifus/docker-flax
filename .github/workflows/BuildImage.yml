@@ -4,31 +4,30 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
   schedule:
     - cron: "0 0 * * 1"
 
 env:
   ENDPOINT: "edifus/flax"
-  BRANCH: "main"
   IMAGE: "latest"
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2.3.3
+      - uses: actions/checkout@v2
+        with:
+          # The branch, tag or SHA to checkout. When checking out the repository that
+          # triggered a workflow, this defaults to the reference or SHA for that event.
+          # Otherwise, uses the default branch.
+          ref: ''
 
       - name: Build image
         run: |
           docker build --no-cache -t ${{ github.sha }} .
       - name: Tag image
         run: |
-          docker tag ${{ github.sha }} ${ENDPOINT}:${IMAGE}
-          docker tag ${{ github.sha }} ${ENDPOINT}:${{ github.sha }}
           docker tag ${{ github.sha }} ghcr.io/${ENDPOINT}:${IMAGE}
           docker tag ${{ github.sha }} ghcr.io/${ENDPOINT}:${{ github.sha }}
       - name: Credential check
